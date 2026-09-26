@@ -31,6 +31,13 @@ jobs:
           cp custom/MainActivity.kt android/app/src/main/kotlin/com/example/screen_ocr/MainActivity.kt
           cp custom/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
+      - name: Fix build.gradle (minSdk 21, compileSdk 34)
+        run: |
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' android/app/build.gradle
+          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' android/app/build.gradle
+          cat android/app/build.gradle | grep -E 'minSdk|targetSdk|compileSdk'
+
       - name: Download tessdata
         run: |
           mkdir -p assets/tessdata
