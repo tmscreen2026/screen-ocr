@@ -18,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.16.0'
+          flutter-version: '3.13.0'
           channel: 'stable'
 
       - name: Scaffold Flutter project
@@ -28,15 +28,16 @@ jobs:
         run: |
           cp custom/pubspec.yaml pubspec.yaml
           cp custom/main.dart lib/main.dart
+          mkdir -p android/app/src/main/kotlin/com/example/screen_ocr
           cp custom/MainActivity.kt android/app/src/main/kotlin/com/example/screen_ocr/MainActivity.kt
           cp custom/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
-      - name: Fix build.gradle (minSdk 21, compileSdk 34)
+      - name: Fix build.gradle
         run: |
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
           sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' android/app/build.gradle
           sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' android/app/build.gradle
-          cat android/app/build.gradle | grep -E 'minSdk|targetSdk|compileSdk'
+          cat android/app/build.gradle
 
       - name: Download tessdata
         run: |
@@ -44,15 +45,16 @@ jobs:
           curl -L -o assets/tessdata/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
           curl -L -o assets/tessdata/mya.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/mya.traineddata
           echo '{"files":["eng.traineddata","mya.traineddata"]}' > assets/tessdata_config.json
+          ls -lh assets/tessdata/
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
