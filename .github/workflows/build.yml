@@ -1,0 +1,51 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+
+      - name: Scaffold Flutter project
+        run: flutter create --org com.example --project-name screen_ocr --platforms android .
+
+      - name: Apply custom files
+        run: |
+          cp custom/pubspec.yaml pubspec.yaml
+          cp custom/main.dart lib/main.dart
+          cp custom/MainActivity.kt android/app/src/main/kotlin/com/example/screen_ocr/MainActivity.kt
+          cp custom/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+
+      - name: Download tessdata
+        run: |
+          mkdir -p assets/tessdata
+          curl -L -o assets/tessdata/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+          curl -L -o assets/tessdata/mya.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/mya.traineddata
+          echo '{"files":["eng.traineddata","mya.traineddata"]}' > assets/tessdata_config.json
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
